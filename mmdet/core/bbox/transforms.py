@@ -2,6 +2,7 @@
 import numpy as np
 import torch
 import cv2
+import math
 
 
 def bbox_flip(bboxes, img_shape, direction='horizontal'):
@@ -246,8 +247,7 @@ def bbox_xyxy_to_cxcywh(bbox):
     x1, y1, x2, y2 = bbox.split((1, 1, 1, 1), dim=-1)
     bbox_new = [(x1 + x2) / 2, (y1 + y2) / 2, (x2 - x1), (y2 - y1)]
     return torch.cat(bbox_new, dim=-1)
-def cal_line_length(point1, point2):
-    return math.sqrt( math.pow(point1[0] - point2[0], 2) + math.pow(point1[1] - point2[1], 2))
+
 def TuplePoly2Poly(poly):
     outpoly = [poly[0][0], poly[0][1],
                        poly[1][0], poly[1][1],
@@ -255,6 +255,40 @@ def TuplePoly2Poly(poly):
                        poly[3][0], poly[3][1]
                        ]
     return outpoly
+
+def Tuplelist2Polylist(tuple_poly_list):
+    polys = map(TuplePoly2Poly, tuple_poly_list)
+
+    return list(polys)
+
+# TODO: test the function
+def mask2poly_single(binary_mask):
+    """
+    :param binary_mask:
+    :return:
+    """
+    # try:
+    contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+    # contour_lens = np.array(list(map(len, contours)))
+    # max_id = contour_lens.argmax()
+    # max_contour = contours[max_id]
+    max_contour = max(contours, key=len)
+    rect = cv2.minAreaRect(max_contour)
+    poly = cv2.boxPoints(rect)
+        # poly = TuplePoly2Poly(poly)
+    # except:
+        # import pdb
+        # pdb.set_trace()
+    return poly
+
+def mask2poly(binary_mask_list):
+    polys = map(mask2poly_single, binary_mask_list)
+    # polys = np.stack(polys
+    return list(polys)
+
+def cal_line_length(point1, point2):
+    return math.sqrt( math.pow(point1[0] - point2[0], 2) + math.pow(point1[1] - point2[1], 2))
+
 def get_best_begin_point_single(coordinate):
     x1 = coordinate[0][0]
     y1 = coordinate[0][1]
@@ -298,29 +332,17 @@ def get_best_begin_point(coordinate_list):
 
     return best_coordinate_list
 
-def mask2poly_single(binary_mask):
-    """
-    :param binary_mask:
-    :return:
-    """
-    # try:
-    contours, hierarchy = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    # contour_lens = np.array(list(map(len, contours)))
-    # max_id = contour_lens.argmax()
-    # max_contour = contours[max_id]
-    max_contour = max(contours, key=len)
-    rect = cv2.minAreaRect(max_contour)
-    poly = cv2.boxPoints(rect)
-        # poly = TuplePoly2Poly(poly)
-    # except:
-        # import pdb
-        # pdb.set_trace()
-    return poly
+def TuplePoly2Poly(poly):
+    outpoly = [poly[0][0], poly[0][1],
+                       poly[1][0], poly[1][1],
+                       poly[2][0], poly[2][1],
+                       poly[3][0], poly[3][1]
+                       ]
+    return outpoly
 
-def mask2poly(binary_mask_list):
-    polys = map(mask2poly_single, binary_mask_list)
-    # polys = np.stack(polys
-    return list(polys)
+def Tuplelist2Polylist(tuple_poly_list):
+    polys = map(TuplePoly2Poly, tuple_poly_list)
+
 
 
 
@@ -335,11 +357,11 @@ def polygonToRotRectangle_batch(bbox, with_module=True):
     bbox = np.array(bbox,dtype=np.float32)
     bbox = np.reshape(bbox,newshape=(-1, 2, 4),order='F')
     # angle = math.atan2(-(bbox[0,1]-bbox[0,0]),bbox[1,1]-bbox[1,0])
-    # print('bbox: ', bbox)
+    print('bbox: ', bbox)
     angle = np.arctan2(-(bbox[:, 0,1]-bbox[:, 0,0]),bbox[:, 1,1]-bbox[:, 1,0])
     # angle = np.arctan2(-(bbox[:, 0,1]-bbox[:, 0,0]),bbox[:, 1,1]-bbox[:, 1,0])
     # center = [[0],[0]] ## shape [2, 1]
-    # print('angle: ', angle)
+    print('angle: ', angle)
     center = np.zeros((bbox.shape[0], 2, 1))
     for i in range(4):
         center[:, 0, 0] += bbox[:, 0,i]
@@ -377,6 +399,10 @@ def polygonToRotRectangle_batch(bbox, with_module=True):
     else:
         angle = angle[:, np.newaxis]
     dboxes = np.concatenate((center[:, 0].astype(np.float), center[:, 1].astype(np.float), w, h, angle), axis=1)
+    print(dboxes)
+    return dboxes
+
+
 
 def gt_mask_bp_obbs(gt_masks, with_module=True):
 
@@ -384,3 +410,5 @@ def gt_mask_bp_obbs(gt_masks, with_module=True):
     gt_polys = mask2poly(gt_masks)
     gt_bp_polys = get_best_begin_point(gt_polys)
     gt_obbs = polygonToRotRectangle_batch(gt_bp_polys, with_module)
+
+    return gt_obbs
