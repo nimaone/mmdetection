@@ -9,7 +9,7 @@ from mmdet.core import (anchor_inside_flags, build_anchor_generator,
 from ..builder import HEADS, build_loss
 from .base_dense_head_obb import BaseDenseHead_obb
 from .dense_test_mixins import BBoxTestMixin
-
+from mmdet.core.bbox.transforms import gt_mask_bp_obbs
 
 @HEADS.register_module()
 class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
@@ -208,7 +208,7 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
                 num_total_pos (int): Number of positive samples in all images
                 num_total_neg (int): Number of negative samples in all images
         """
-        gt_obbs = gt_mask_bp_obbs(gt_masks, with_module)
+        gt_obbs = gt_mask_bp_obbs(gt_masks)
         gt_obbs_ts = torch.from_numpy(gt_obbs).to(gt_bboxes.device)
 
         inside_flags = anchor_inside_flags(flat_anchors, valid_flags,
