@@ -111,19 +111,19 @@ data = dict(
         ann_file='train/DOTA_train.json',
         img_prefix='train/images',
         pipeline=train_pipeline,
-        data_root='/content/DOTA_ssplit_600_150/'),
+        data_root=data_root),
     val=dict(
         type='dotaDataset',
-        ann_file='train/DOTA_train.json',
+        ann_file='val/DOTA_val.json',
         img_prefix='train/images',
         pipeline=test_pipeline,
-        data_root='/content/DOTA_ssplit_600_150/'),
+        data_root=data_root),
     test=dict(
         type='dotaDataset',
         ann_file='train/DOTA_train.json',
         img_prefix='train/images',
         pipeline=test_pipeline,
-        data_root='/content/DOTA_ssplit_600_150/'))
+        data_root=data_root))
 
 
 # evaluation = None
