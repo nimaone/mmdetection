@@ -1,6 +1,7 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .anchor_free_head import AnchorFreeHead
 from .anchor_head import AnchorHead
+from .anchor_head_obb import AnchorHead_obb
 from .atss_head import ATSSHead
 from .autoassign_head import AutoAssignHead
 from .cascade_rpn_head import CascadeRPNHead, StageCascadeRPNHead
@@ -25,6 +26,7 @@ from .pisa_retinanet_head import PISARetinaHead
 from .pisa_ssd_head import PISASSDHead
 from .reppoints_head import RepPointsHead
 from .retina_head import RetinaHead
+from .retina_head_obb import RetinaHead_obb
 from .retina_sepbn_head import RetinaSepBNHead
 from .rpn_head import RPNHead
 from .sabl_retina_head import SABLRetinaHead
@@ -36,8 +38,8 @@ from .yolof_head import YOLOFHead
 from .yolox_head import YOLOXHead
 
 __all__ = [
-    'AnchorFreeHead', 'AnchorHead', 'GuidedAnchorHead', 'FeatureAdaption',
-    'RPNHead', 'GARPNHead', 'RetinaHead', 'RetinaSepBNHead', 'GARetinaHead',
+    'AnchorFreeHead', 'AnchorHead', 'AnchorHead_obb', 'GuidedAnchorHead', 'FeatureAdaption',
+    'RPNHead', 'GARPNHead', 'RetinaHead', 'RetinaHead_obb', 'RetinaSepBNHead', 'GARetinaHead',
     'SSDHead', 'FCOSHead', 'RepPointsHead', 'FoveaHead',
     'FreeAnchorRetinaHead', 'ATSSHead', 'FSAFHead', 'NASFCOSHead',
     'PISARetinaHead', 'PISASSDHead', 'GFLHead', 'CornerHead', 'YOLACTHead',
