@@ -343,6 +343,132 @@ def TuplePoly2Poly(poly):
 def Tuplelist2Polylist(tuple_poly_list):
     polys = map(TuplePoly2Poly, tuple_poly_list)
 
+def backward_convert(coordinate, with_label=False):
+    """
+    :param coordinate: format [x1, y1, x2, y2, x3, y3, x4, y4, (label)]
+    :param with_label: default True
+    :return: format [x_c, y_c, w, h, theta, (label)]
+    """
+
+    boxes = []
+    if with_label:
+        for rect in coordinate:
+            # box = np.int0(rect[:-1])
+            box = np.array(rect[:-1],dtype=np.float32)
+            box = box.reshape([-1, 2])
+            rect1 = cv2.minAreaRect(box)
+
+            x, y, w, h, theta = rect1[0][0], rect1[0][1], rect1[1][0], rect1[1][1], rect1[2]
+
+            if theta == 0:
+                w, h = h, w
+                theta -= 90
+            if theta == 0:
+                w, h = h, w
+                theta -= 90
+            if theta > 0:
+                if theta != 90:  # Θ=90说明wh中有为0的元素，即gt信息不完整，无需提示异常，直接删除
+                    print('θ计算出现异常，当前数据为：%.16f, %.16f, %.16f, %.16f, %.1f;超出opencv表示法的范围：[-90,0)' % (x, y, w, h, theta))
+                return False
+
+            if theta < -90:
+                print('θ计算出现异常，当前数据为：%.16f, %.16f, %.16f, %.16f, %.1f;超出opencv表示法的范围：[-90,0)' % (x, y, w, h, theta))
+                return False
+            boxes.append([x, y, w, h, theta, rect[-1]])
+
+    else:
+        for rect in coordinate:
+            # box = np.int0(rect)
+            box = np.array(rect,dtype=np.float32)
+            box = box.reshape([-1, 2])
+            rect1 = cv2.minAreaRect(box)
+
+            x, y, w, h, theta = rect1[0][0], rect1[0][1], rect1[1][0], rect1[1][1], rect1[2]
+
+            if theta == 0:
+                w, h = h, w
+                theta -= 90
+            if theta > 0:
+                if theta != 90:  # Θ=90说明wh中有为0的元素，即gt信息不完整，无需提示异常，直接删除
+                    print('θ计算出现异常，当前数据为：%.16f, %.16f, %.16f, %.16f, %.1f;超出opencv表示法的范围：[-90,0)' % (x, y, w, h, theta))
+                return False
+
+            if theta < -90:
+                print('θ计算出现异常，当前数据为：%.16f, %.16f, %.16f, %.16f, %.1f;超出opencv表示法的范围：[-90,0)' % (x, y, w, h, theta))
+                return False
+
+            boxes.append([x, y, w, h, theta])
+    return np.array(boxes, dtype=np.float32)
+
+
+
+
+
+def change_rbox_definition(rboxes, mode=1, shift=None):
+    # if len(quads.shape) == 1:
+    #     quads = quads[np.newaxis, :]
+    rboxes_new = np.zeros((rboxes.shape[0], 5), dtype=np.float64)
+    for i, rbox in enumerate(rboxes): 
+        x, y, w, h, t = rbox[0], rbox[1], rbox[2], rbox[3], rbox[4]
+        # [-90,0),   xy(oc),  wx,hx
+        if mode==0:
+          rboxes_new[i, :] = np.array([x, y, w, h, t])
+        # [-45,45),   xy,  wx,hx
+        # print(t)
+        if mode==1:
+
+          if np.abs(t) < 45.0:
+              rboxes_new[i, :] = np.array([x, y, w, h, t])
+          elif np.abs(t) > 45.0:
+              rboxes_new[i, :] = np.array([x, y, h, w, 90.0 + t])
+          else:   
+              if w > h:
+                  rboxes_new[i, :] = np.array([x, y, w, h, -45.0])
+              else:
+                  rboxes_new[i, :] = np.array([x, y, h, w, -45.0])
+        # [-90,90),   x,  wx,hx
+        
+        if mode==2:
+
+          # if w > h:
+          #     if np.abs(t) < 45.0:
+          #       rboxes_new[i, :] = np.array([x, y, w, h, t])
+          #     else:
+          #       rboxes_new[i, :] = np.array([x, y, h, w, t])
+          # else:
+          #     if np.abs(t) < 45.0:
+          #       rboxes_new[i, :] = np.array([x, y, w, h, 90.0 + t])
+          #     else:
+          #       rboxes_new[i, :] = np.array([x, y, h, w, 90.0 + t])
+        
+          if np.abs(t) < 45.0:
+                rboxes_new[i, :] = np.array([x, y, w, h, t])
+          else:
+                rboxes_new[i, :] = np.array([x, y, h, w, t])
+          if w > h:
+                rboxes_new[i, -1] =  t
+          else:
+                rboxes_new[i, -1] =  90.0 + t
+        # print(t)
+        if shift is not None:
+          # print(t)
+          # print(rboxes_new[i, -1]%shift)
+          rboxes_new[i, -1] =  rboxes_new[i, -1]%shift
+          # else:
+          #   if w > h:
+          #       rboxes_new[i, :] = np.array([x, y, w, h, -45.0])
+          #   else:
+          #       rboxes_new[i, :] = np.array([x, y, h, w, 45])
+        
+    # (x_ctr, y_ctr, w, h) -> (x1, y1, x2, y2)
+    # if mode == 'xyxya':
+    #     rboxes[:, 0:2] = rboxes[:, 0:2] - rboxes[:, 2:4] * 0.5
+    #     rboxes[:, 2:4] = rboxes[:, 0:2] + rboxes[:, 2:4]
+    # rboxes[:, 0:4] = rboxes[:, 0:4].astype(np.int32)
+    return rboxes_new
+
+
+
 
 
 
@@ -409,6 +535,11 @@ def gt_mask_bp_obbs(gt_masks, with_module=True):
     # trans gt_masks to gt_obbs
     gt_polys = mask2poly(gt_masks)
     gt_bp_polys = get_best_begin_point(gt_polys)
-    gt_obbs = polygonToRotRectangle_batch(gt_bp_polys, with_module)
+    print(gt_bp_polys)
+    gt_obbs_cv2 = backward_convert(gt_bp_polys)
+    print(gt_obbs_cv2)
+    gt_obbs_axis = change_rbox_definition(gt_obbs_cv2)
+    print(gt_obbs_axis)
+    # gt_obbs = polygonToRotRectangle_batch(gt_bp_polys, with_module)
 
-    return gt_obbs
+    return gt_obbs_axis
