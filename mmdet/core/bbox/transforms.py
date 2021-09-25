@@ -550,4 +550,4 @@ def gt_mask_bp_obbs(gt_masks, with_module=True):
     print(gt_obbs_axis_lr)
     # gt_obbs = polygonToRotRectangle_batch(gt_bp_polys, with_module)
 
-    return gt_obbs_axis
+    return gt_obbs_axis_lr
