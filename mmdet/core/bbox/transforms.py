@@ -528,6 +528,12 @@ def polygonToRotRectangle_batch(bbox, with_module=True):
     print(dboxes)
     return dboxes
 
+def xcycwha2xlylxryra(obbs_n):
+      return np.concatenate([obbs_n[:,0:1]-obbs_n[:,2:3]/2,
+                              obbs_n[:,1:2]-obbs_n[:,3:4]/2,
+                              obbs_n[:,0:1]+obbs_n[:,2:3]/2,
+                              obbs_n[:,1:2]+obbs_n[:,3:4]/2,
+                              obbs_n[:,4:5]],axis=1)
 
 
 def gt_mask_bp_obbs(gt_masks, with_module=True):
@@ -540,6 +546,8 @@ def gt_mask_bp_obbs(gt_masks, with_module=True):
     print(gt_obbs_cv2)
     gt_obbs_axis = change_rbox_definition(gt_obbs_cv2)
     print(gt_obbs_axis)
+    gt_obbs_axis_lr = xcycwha2xlylxryra(gt_obbs_axis)
+    print(gt_obbs_axis_lr)
     # gt_obbs = polygonToRotRectangle_batch(gt_bp_polys, with_module)
 
     return gt_obbs_axis
