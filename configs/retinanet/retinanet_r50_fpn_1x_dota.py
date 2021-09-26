@@ -53,9 +53,9 @@ model = dict(
     test_cfg=dict(
         nms_pre=2000,
         min_bbox_size=0,
-        score_thr=0.05,
-        nms=dict(type='nms', iou_threshold=0.1),
-        max_per_img=2000))    
+        score_thr=0.2,
+        nms=dict(type='nms', iou_threshold=0.5),
+        max_per_img=100))    
 
 
 
@@ -68,10 +68,7 @@ train_pipeline = [
     dict(type='LoadAnnotations', with_bbox=True, with_mask=True, poly2mask=True,),
     dict(
         type='Resize',
-        img_scale=[(1333, 640), (1333, 672), (1333, 704), (1333, 736),
-                   (1333, 768), (1333, 800)],
-        multiscale_mode='value',
-        keep_ratio=True),
+        img_scale=(800, 800), keep_ratio=True),
     dict(type='RandomFlip', flip_ratio=0.5),
     dict(
         type='Normalize',
@@ -87,7 +84,7 @@ test_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(
         type='MultiScaleFlipAug',
-        img_scale=(1333, 800),
+        img_scale=(800, 800),
         flip=False,
         transforms=[
             dict(type='Resize', keep_ratio=True),
@@ -148,10 +145,10 @@ log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
 custom_hooks = [dict(type='NumClassCheckHook')]
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-load_from = None
+load_from = '/content/mmdetection/checkpoint/retinanet_r50_fpn_2x_coco_20200131-fdb43119.pth'
 resume_from = None
 workflow = [('train', 1)]
-work_dir = '/content/drive/MyDrive/tutorial_exps'
+work_dir = '/content/tutorial_exps'
 seed = 0
 gpu_ids = range(0, 1)
 
