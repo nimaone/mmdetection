@@ -209,8 +209,10 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
                 num_total_neg (int): Number of negative samples in all images
         """
         gt_obbs = gt_mask_bp_obbs(gt_masks)
+        # print('gt_obbs')
+        # print('gt_obbs',gt_obbs)
         gt_obbs_ts = torch.from_numpy(gt_obbs).to(gt_bboxes.device)
-
+        # print('gt_obbs_ts',gt_obbs_ts)
         inside_flags = anchor_inside_flags(flat_anchors, valid_flags,
                                            img_meta['img_shape'][:2],
                                            self.train_cfg.allowed_border)
@@ -220,14 +222,23 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
         anchors = flat_anchors[inside_flags, :]
 
         assign_result = self.assigner.assign(
-            anchors, gt_obbs, gt_bboxes_ignore,
+            anchors, gt_obbs_ts[...,:4], gt_bboxes_ignore,
             None if self.sampling else gt_labels)
+        # print('assign_result',(assign_result.info))
         sampling_result = self.sampler.sample(assign_result, anchors,
                                               gt_obbs_ts)
+        # print('sampling_result',(sampling_result))
+        # print('sampling_result.pos_inds',(sampling_result.pos_inds))
+        # print('sampling_result.neg_inds',(sampling_result.neg_inds))
+        # print('sampling_result.pos_bboxes',(sampling_result.pos_bboxes))
+        # print('sampling_result.pos_gt_bboxes',(sampling_result.pos_gt_bboxes))
 
         num_valid_anchors = anchors.shape[0]
-        bbox_targets = torch.zeros_like(anchors)
-        bbox_weights = torch.zeros_like(anchors)
+        # bbox_targets = torch.zeros_like(anchors)
+        # bbox_weights = torch.zeros_like(anchors)
+
+        bbox_targets = anchors.new_zeros((anchors.size(0), 5))
+        bbox_weights = anchors.new_zeros((anchors.size(0), 5))
         
         labels = anchors.new_full((num_valid_anchors, ),
                                   self.num_classes,
@@ -661,7 +672,11 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
                 scores = cls_score.softmax(-1)
             bbox_pred = bbox_pred.permute(0, 2, 3,
                                           1).reshape(batch_size, -1, 5)
-            anchors = anchors.expand_as(bbox_pred)
+            print('bbox_pred',bbox_pred.shape)
+            print('anchors',anchors.shape)
+            # anchors = anchors.expand_as(bbox_pred)
+            anchors = anchors.unsqueeze(0)
+            print('anchors',anchors.shape)
             # Always keep topk op for dynamic input in onnx
             from mmdet.core.export import get_k_for_topk
             nms_pre = get_k_for_topk(nms_pre_tensor, bbox_pred.shape[1])
@@ -688,11 +703,13 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
             mlvl_scores.append(scores)
 
         batch_mlvl_bboxes = torch.cat(mlvl_bboxes, dim=1)
+        print('batch_mlvl_bboxes',batch_mlvl_bboxes.shape)
         if rescale:
-            batch_mlvl_bboxes /= batch_mlvl_bboxes[..., :4].new_tensor(
+            batch_mlvl_bboxes[..., :4] /= batch_mlvl_bboxes[..., :4].new_tensor(
                 scale_factors).unsqueeze(1)
         batch_mlvl_scores = torch.cat(mlvl_scores, dim=1)
-
+        print('batch_mlvl_bboxes',batch_mlvl_bboxes.shape)
+        print('batch_mlvl_scores',batch_mlvl_scores.shape)
         # Replace multiclass_nms with ONNX::NonMaxSuppression in deployment
         if torch.onnx.is_in_onnx_export() and with_nms:
             from mmdet.core.export import add_dummy_nms_for_onnx
@@ -720,11 +737,14 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
 
         if with_nms:
             det_results = []
-            for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes,
+            for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes[...,:4],
                                                   batch_mlvl_scores):
+                print('mlvl_bboxes',mlvl_bboxes.shape)                                  
                 det_bbox, det_label = multiclass_nms(mlvl_bboxes, mlvl_scores,
                                                      cfg.score_thr, cfg.nms,
                                                      cfg.max_per_img)
+                print('det_bbox',det_bbox.shape) 
+                print('det_label',det_label.shape)                                     
                 det_results.append(tuple([det_bbox, det_label]))
         else:
             det_results = [
