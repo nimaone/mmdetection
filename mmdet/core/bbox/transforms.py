@@ -541,13 +541,13 @@ def gt_mask_bp_obbs(gt_masks, with_module=True):
     # trans gt_masks to gt_obbs
     gt_polys = mask2poly(gt_masks)
     gt_bp_polys = get_best_begin_point(gt_polys)
-    print(gt_bp_polys)
+#     print(gt_bp_polys)
     gt_obbs_cv2 = backward_convert(gt_bp_polys)
-    print(gt_obbs_cv2)
+#     print(gt_obbs_cv2)
     gt_obbs_axis = change_rbox_definition(gt_obbs_cv2)
-    print(gt_obbs_axis)
+#     print(gt_obbs_axis)
     gt_obbs_axis_lr = xcycwha2xlylxryra(gt_obbs_axis)
-    print(gt_obbs_axis_lr)
+#     print(gt_obbs_axis_lr)
     # gt_obbs = polygonToRotRectangle_batch(gt_bp_polys, with_module)
 
     return gt_obbs_axis_lr
