@@ -30,9 +30,9 @@ class DeltaXYWHBBoxCoder(BaseBBoxCoder):
     """
 
     def __init__(self,
-                 target_means=(0., 0., 0., 0.),
-                 target_stds=(1., 1., 1., 1.),
-                 clip_border=True,
+                 target_means=(0., 0., 0., 0., 0.),
+                 target_stds=(1., 1., 1., 1., 1.),
+                 clip_border=False,
                  add_ctr_clamp=False,
                  ctr_clamp=32):
         super(BaseBBoxCoder, self).__init__()
@@ -55,8 +55,10 @@ class DeltaXYWHBBoxCoder(BaseBBoxCoder):
             torch.Tensor: Box transformation deltas
         """
 
-        assert bboxes.size(0) == gt_bboxes.size(0)
-        assert bboxes.size(-1) == gt_bboxes.size(-1) == 4
+        # assert bboxes.size(0) == gt_bboxes.size(0)
+        # print(bboxes.shape)
+        # print(gt_bboxes.shape)
+        # assert bboxes.size(-1) == gt_bboxes.size(-1) == 5
         encoded_bboxes = bbox2delta(bboxes, gt_bboxes, self.means, self.stds)
         return encoded_bboxes
 
@@ -96,7 +98,7 @@ class DeltaXYWHBBoxCoder(BaseBBoxCoder):
 
 
 @mmcv.jit(coderize=True)
-def bbox2delta(proposals, gt, means=(0., 0., 0., 0.), stds=(1., 1., 1., 1.)):
+def bbox2delta(proposals, gt, means=(0., 0., 0., 0., 0.), stds=(1., 1., 1., 1., 1.)):
     """Compute deltas of proposals w.r.t. gt.
 
     We usually compute the deltas of x, y, w, h of proposals w.r.t ground
@@ -114,7 +116,7 @@ def bbox2delta(proposals, gt, means=(0., 0., 0., 0.), stds=(1., 1., 1., 1.)):
         Tensor: deltas with shape (N, 4), where columns represent dx, dy,
             dw, dh.
     """
-    assert proposals.size() == gt.size()
+    # assert proposals.size() == gt.size()
 
     proposals = proposals.float()
     gt = gt.float()
@@ -127,28 +129,71 @@ def bbox2delta(proposals, gt, means=(0., 0., 0., 0.), stds=(1., 1., 1., 1.)):
     gy = (gt[..., 1] + gt[..., 3]) * 0.5
     gw = gt[..., 2] - gt[..., 0]
     gh = gt[..., 3] - gt[..., 1]
+    ga = gt[..., 4] 
 
     dx = (gx - px) / pw
     dy = (gy - py) / ph
     dw = torch.log(gw / pw)
     dh = torch.log(gh / ph)
-    deltas = torch.stack([dx, dy, dw, dh], dim=-1)
+    da = (ga / 45.)
+
+    deltas = torch.stack([dx, dy, dw, dh, da], dim=-1)
 
     means = deltas.new_tensor(means).unsqueeze(0)
     stds = deltas.new_tensor(stds).unsqueeze(0)
     deltas = deltas.sub_(means).div_(stds)
-
+    # print('deltas',deltas)
     return deltas
+
+# def obb2delta(proposals, gt, theta_norm=True, means=(0., 0., 0., 0., 0.), stds=(1., 1., 1., 1., 1.)):
+#     proposals = proposals.float()
+#     gt = gt.float()
+#     px = (proposals[..., 0] + proposals[..., 2]) * 0.5
+#     py = (proposals[..., 1] + proposals[..., 3]) * 0.5
+#     pw = proposals[..., 2] - proposals[..., 0]
+#     ph = proposals[..., 3] - proposals[..., 1]
+#     gx, gy, gw, gh, gtheta = gt.unbind(dim=-1)
+
+#     dtheta1 = regular_theta(gtheta)
+#     dtheta2 = regular_theta(gtheta + pi/2)
+#     abs_dtheta1 = torch.abs(dtheta1)
+#     abs_dtheta2 = torch.abs(dtheta2)
+
+#     gw_regular = torch.where(abs_dtheta1 < abs_dtheta2, gw, gh)
+#     gh_regular = torch.where(abs_dtheta1 < abs_dtheta2, gh, gw)
+#     dtheta = torch.where(abs_dtheta1 < abs_dtheta2, dtheta1, dtheta2)
+#     dx = (gx - px) / pw
+#     dy = (gy - py) / ph
+#     dw = torch.log(gw_regular / pw)
+#     dh = torch.log(gh_regular / ph)
+
+#     if theta_norm:
+#         dtheta /= 2 * pi
+#     deltas = torch.stack([dx, dy, dw, dh, dtheta], dim=-1)
+
+#     means = deltas.new_tensor(means).unsqueeze(0)
+#     stds = deltas.new_tensor(stds).unsqueeze(0)
+#     deltas = deltas.sub_(means).div_(stds)
+#     return deltas
+
+
+
+
+
+
+
+
+
 
 
 @mmcv.jit(coderize=True)
 def delta2bbox(rois,
                deltas,
-               means=(0., 0., 0., 0.),
-               stds=(1., 1., 1., 1.),
+               means=(0., 0., 0., 0., 0.),
+               stds=(1., 1., 1., 1., 1.),
                max_shape=None,
                wh_ratio_clip=16 / 1000,
-               clip_border=True,
+               clip_border=False,
                add_ctr_clamp=False,
                ctr_clamp=32):
     """Apply deltas to shift/scale base boxes.
@@ -205,13 +250,16 @@ def delta2bbox(rois,
     """
     means = deltas.new_tensor(means).view(1,
                                           -1).repeat(1,
-                                                     deltas.size(-1) // 4)
-    stds = deltas.new_tensor(stds).view(1, -1).repeat(1, deltas.size(-1) // 4)
+                                                     deltas.size(-1) // 5)
+    stds = deltas.new_tensor(stds).view(1, -1).repeat(1, deltas.size(-1) // 5)
     denorm_deltas = deltas * stds + means
-    dx = denorm_deltas[..., 0::4]
-    dy = denorm_deltas[..., 1::4]
-    dw = denorm_deltas[..., 2::4]
-    dh = denorm_deltas[..., 3::4]
+    dx = denorm_deltas[..., 0::5]
+    dy = denorm_deltas[..., 1::5]
+    dw = denorm_deltas[..., 2::5]
+    dh = denorm_deltas[..., 3::5]
+    da = denorm_deltas[..., 4::5]
+
+    da *= 45
 
     x1, y1 = rois[..., 0], rois[..., 1]
     x2, y2 = rois[..., 2], rois[..., 3]
@@ -240,13 +288,14 @@ def delta2bbox(rois,
     # Use network energy to shift the center of each roi
     gx = px + dx_width
     gy = py + dy_height
+    ga = da
     # Convert center-xy/width/height to top-left, bottom-right
     x1 = gx - gw * 0.5
     y1 = gy - gh * 0.5
     x2 = gx + gw * 0.5
     y2 = gy + gh * 0.5
 
-    bboxes = torch.stack([x1, y1, x2, y2], dim=-1).view(deltas.size())
+    bboxes = torch.stack([x1, y1, x2, y2, ga], dim=-1).view(deltas.size())
 
     if clip_border and max_shape is not None:
         # clip bboxes with dynamic `min` and `max` for onnx
@@ -270,3 +319,5 @@ def delta2bbox(rois,
         bboxes = torch.where(bboxes > max_xy, max_xy, bboxes)
 
     return bboxes
+
+
