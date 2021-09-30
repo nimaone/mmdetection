@@ -112,7 +112,7 @@ data = dict(
     val=dict(
         type='dotaDataset',
         ann_file='val/DOTA_val.json',
-        img_prefix='train/images',
+        img_prefix='val/images',
         pipeline=test_pipeline,
         data_root=data_root),
     test=dict(
@@ -128,7 +128,7 @@ evaluation = dict(interval=1, metric='mAP')
 
 
 # optimizer
-optimizer = dict(type='SGD', lr=0.005, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
