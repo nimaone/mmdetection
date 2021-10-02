@@ -32,20 +32,26 @@ def multiclass_nms(multi_bboxes,
         tuple: (dets, labels, indices (optional)), tensors of shape (k, 5),
             (k), and (k). Dets are boxes with scores. Labels are 0-based.
     """
-    num_classes = multi_scores.size(1) - 1
-    # exclude background category
-    if multi_bboxes.shape[1] > 4:
-        bboxes = multi_bboxes.view(multi_scores.size(0), -1, 4)
+#     num_classes = multi_scores.size(1) - 1
+#     # exclude background category
+#     if multi_bboxes.shape[1] > 4:
+#         bboxes = multi_bboxes.view(multi_scores.size(0), -1, 4)
+#     else:
+#         bboxes = multi_bboxes[:, None].expand(
+#             multi_scores.size(0), num_classes, 4)
+    if multi_bboxes.shape[1] > 5:
+        bboxes = multi_bboxes.view(multi_scores.size(0), -1, 5)
     else:
         bboxes = multi_bboxes[:, None].expand(
-            multi_scores.size(0), num_classes, 4)
+            multi_scores.size(0), num_classes, 5)
 
     scores = multi_scores[:, :-1]
 
     labels = torch.arange(num_classes, dtype=torch.long, device=scores.device)
     labels = labels.view(1, -1).expand_as(scores)
 
-    bboxes = bboxes.reshape(-1, 4)
+#     bboxes = bboxes.reshape(-1, 4)
+    bboxes = bboxes.reshape(-1, 5)
     scores = scores.reshape(-1)
     labels = labels.reshape(-1)
 
@@ -69,7 +75,8 @@ def multiclass_nms(multi_bboxes,
     else:
         # TensorRT NMS plugin has invalid output filled with -1
         # add dummy data to make detection output correct.
-        bboxes = torch.cat([bboxes, bboxes.new_zeros(1, 4)], dim=0)
+#         bboxes = torch.cat([bboxes, bboxes.new_zeros(1, 4)], dim=0)
+        bboxes = torch.cat([bboxes, bboxes.new_zeros(1, 5)], dim=0)
         scores = torch.cat([scores, scores.new_zeros(1)], dim=0)
         labels = torch.cat([labels, labels.new_zeros(1)], dim=0)
 
@@ -83,8 +90,10 @@ def multiclass_nms(multi_bboxes,
         else:
             return dets, labels
 
-    dets, keep = batched_nms(bboxes, scores, labels, nms_cfg)
-
+#     dets, keep = batched_nms(bboxes, scores, labels, nms_cfg)
+    dets, keep = batched_nms(bboxes[...,:4], scores, labels, nms_cfg)
+    angles = bboxes[...,4][keep].unsqueeze(1)
+    dets = torch.cat([angles,dets],dim=1)
     if max_num > 0:
         dets = dets[:max_num]
         keep = keep[:max_num]
