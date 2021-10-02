@@ -703,7 +703,7 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
             mlvl_scores.append(scores)
 
         batch_mlvl_bboxes = torch.cat(mlvl_bboxes, dim=1)
-        print('batch_mlvl_bboxes',batch_mlvl_bboxes.shape)
+#         print('batch_mlvl_bboxes',batch_mlvl_bboxes.shape)
         if rescale:
             batch_mlvl_bboxes[..., :4] /= batch_mlvl_bboxes[..., :4].new_tensor(
                 scale_factors).unsqueeze(1)
