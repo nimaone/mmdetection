@@ -737,7 +737,7 @@ class AnchorHead_obb(BaseDenseHead_obb, BBoxTestMixin):
 
         if with_nms:
             det_results = []
-            for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes[...,:4],
+            for (mlvl_bboxes, mlvl_scores) in zip(batch_mlvl_bboxes,
                                                   batch_mlvl_scores):
                 print('mlvl_bboxes',mlvl_bboxes.shape)                                  
                 det_bbox, det_label = multiclass_nms(mlvl_bboxes, mlvl_scores,
