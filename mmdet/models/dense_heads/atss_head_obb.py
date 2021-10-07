@@ -8,7 +8,7 @@ from mmdet.core import (anchor_inside_flags, build_assigner, build_sampler,
                         images_to_levels, multi_apply, multiclass_nms,
                         reduce_mean, unmap)
 from ..builder import HEADS, build_loss
-from .anchor_head import AnchorHead
+from .anchor_head_obb import AnchorHead_obb
 
 
 @HEADS.register_module()
