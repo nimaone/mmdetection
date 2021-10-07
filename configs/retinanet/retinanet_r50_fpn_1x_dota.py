@@ -69,7 +69,7 @@ train_pipeline = [
     dict(
         type='Resize',
         img_scale=(800, 800), keep_ratio=True),
-    dict(type='RandomFlip', [] , flip_ratio=0.5),
+    dict(type='RandomFlip', direction = ['horizontal', 'vertical'] , flip_ratio=0.5),
     dict(
         type='Normalize',
         mean=[103.53, 116.28, 123.675],
