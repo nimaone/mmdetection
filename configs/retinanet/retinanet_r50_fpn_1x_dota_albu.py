@@ -217,6 +217,6 @@ log_level = 'INFO'
 load_from = '/content/mmdetection/checkpoint/retinanet_r50_fpn_2x_coco_20200131-fdb43119.pth'
 resume_from = None
 workflow = [('train', 1)]
-work_dir = '/content/drive/MyDrive/tutorial_exps'
+work_dir = '/content/drive/MyDrive/tutorial_exps1'
 seed = 0
 gpu_ids = range(0, 1)
