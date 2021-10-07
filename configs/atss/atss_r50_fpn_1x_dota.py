@@ -3,7 +3,7 @@ _base_ = [
     '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
 ]
 model = dict(
-    type='ATSS',
+    type='ATSS_obb',
     backbone=dict(
         type='ResNet',
         depth=50,
@@ -22,7 +22,7 @@ model = dict(
         add_extra_convs='on_output',
         num_outs=5),
     bbox_head=dict(
-        type='ATSSHead',
+        type='ATSSHead_obb',
         num_classes=80,
         in_channels=256,
         stacked_convs=4,
