@@ -100,8 +100,8 @@ albu_train_transforms = [
                 p=0.9)
         ],
         p=0.2),
-    dict(type='JpegCompression', quality_lower=85, quality_upper=95, p=0.2),
-    dict(type='ChannelShuffle', p=0.1),
+#     dict(type='JpegCompression', quality_lower=85, quality_upper=95, p=0.2),
+#     dict(type='ChannelShuffle', p=0.1),
     dict(type='ToGray', p=0.05),
     dict(type='HorizontalFlip', p=0.5),
     dict(type='VerticalFlip', p=0.5),
