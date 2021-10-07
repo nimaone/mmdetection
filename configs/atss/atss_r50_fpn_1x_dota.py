@@ -1,7 +1,3 @@
-_base_ = [
-    '../_base_/datasets/coco_detection.py',
-    '../_base_/schedules/schedule_1x.py', '../_base_/default_runtime.py'
-]
 model = dict(
     type='ATSS_obb',
     backbone=dict(
@@ -59,4 +55,95 @@ model = dict(
         nms=dict(type='nms', iou_threshold=0.6),
         max_per_img=100))
 # optimizer
-optimizer = dict(type='SGD', lr=0.01, momentum=0.9, weight_decay=0.0001)
+dataset_type = 'dotaDataset'
+data_root = '/content/DOTA_ssplit_600_150/'
+img_norm_cfg = dict(
+    mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
+train_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='LoadAnnotations', with_bbox=True, with_mask=True, poly2mask=True,),
+    dict(
+        type='Resize',
+        img_scale=(800, 800), keep_ratio=True),
+    dict(type='RandomFlip', flip_ratio=0.5),
+    dict(
+        type='Normalize',
+        mean=[103.53, 116.28, 123.675],
+        std=[1.0, 1.0, 1.0],
+        to_rgb=False),
+    dict(type='Pad', size_divisor=32),
+    dict(type='DefaultFormatBundle'),
+    dict(type='Collect', keys=['img', 'gt_bboxes', 'gt_labels', 'gt_masks'])
+]
+
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(800, 800),
+        flip=False,
+        transforms=[
+            dict(type='Resize', keep_ratio=True),
+            dict(type='RandomFlip'),
+            dict(
+                type='Normalize',
+                mean=[103.53, 116.28, 123.675],
+                std=[1.0, 1.0, 1.0],
+                to_rgb=False),
+            dict(type='Pad', size_divisor=32),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', keys=['img'])
+        ])
+]
+
+data = dict(
+    samples_per_gpu=4,
+    workers_per_gpu=2,
+    train=dict(
+        type='dotaDataset',
+        ann_file='train/DOTA_train.json',
+        img_prefix='train/images',
+        pipeline=train_pipeline,
+        data_root=data_root),
+    val=dict(
+        type='dotaDataset',
+        ann_file='val/DOTA_val.json',
+        img_prefix='val/images',
+        pipeline=test_pipeline,
+        data_root=data_root),
+    test=dict(
+        type='dotaDataset',
+        ann_file='train/DOTA_train.json',
+        img_prefix='train/images',
+        pipeline=test_pipeline,
+        data_root=data_root))
+
+
+# evaluation = None
+evaluation = dict(interval=1, metric='mAP')
+
+
+# optimizer
+optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=0.0001)
+optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
+# learning policy
+lr_config = dict(
+    policy='step',
+    warmup='linear',
+    warmup_iters=500,
+    warmup_ratio=0.001,
+    step=[8, 11])
+
+
+runner = dict(type='EpochBasedRunner', max_epochs=12)
+checkpoint_config = dict(interval=1)
+log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
+custom_hooks = [dict(type='NumClassCheckHook')]
+dist_params = dict(backend='nccl')
+log_level = 'INFO'
+load_from = '/content/mmdetection/checkpoint/retinanet_r50_fpn_2x_coco_20200131-fdb43119.pth'
+resume_from = None
+workflow = [('train', 1)]
+work_dir = '/content/tutorial_exps'
+seed = 0
+gpu_ids = range(0, 1)
