@@ -12,7 +12,7 @@ from .anchor_head import AnchorHead
 
 
 @HEADS.register_module()
-class ATSSHead(AnchorHead_obb):
+class ATSSHead_obb(AnchorHead_obb):
     """Bridging the Gap Between Anchor-based and Anchor-free Detection via
     Adaptive Training Sample Selection.
     ATSS head structure is similar with FCOS, however ATSS use anchor boxes
@@ -43,7 +43,7 @@ class ATSSHead(AnchorHead_obb):
         self.stacked_convs = stacked_convs
         self.conv_cfg = conv_cfg
         self.norm_cfg = norm_cfg
-        super(ATSSHead, self).__init__(
+        super(ATSSHead_obb, self).__init__(
             num_classes, in_channels, init_cfg=init_cfg, **kwargs)
 
         self.sampling = False
