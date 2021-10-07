@@ -3,6 +3,8 @@ from .anchor_free_head import AnchorFreeHead
 from .anchor_head import AnchorHead
 from .anchor_head_obb import AnchorHead_obb
 from .atss_head import ATSSHead
+from .atss_head_obb import ATSSHead_obb
+
 from .autoassign_head import AutoAssignHead
 from .cascade_rpn_head import CascadeRPNHead, StageCascadeRPNHead
 from .centernet_head import CenterNetHead
