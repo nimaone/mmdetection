@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .atss import ATSS
+from .atss_obb import ATSS_obb
 from .autoassign import AutoAssign
 from .base import BaseDetector
 from .cascade_rcnn import CascadeRCNN
@@ -40,7 +41,7 @@ from .yolof import YOLOF
 from .yolox import YOLOX
 
 __all__ = [
-    'ATSS', 'BaseDetector', 'SingleStageDetector', 'SingleStageDetector_obb', 'TwoStageDetector', 'RPN',
+    'ATSS', 'ATSS_obb', 'BaseDetector', 'SingleStageDetector', 'SingleStageDetector_obb', 'TwoStageDetector', 'RPN',
     'KnowledgeDistillationSingleStageDetector', 'FastRCNN', 'FasterRCNN',
     'MaskRCNN', 'CascadeRCNN', 'HybridTaskCascade', 'RetinaNet','RetinaNet_obb', 'FCOS',
     'GridRCNN', 'MaskScoringRCNN', 'RepPointsDetector', 'FOVEA', 'FSAF',
