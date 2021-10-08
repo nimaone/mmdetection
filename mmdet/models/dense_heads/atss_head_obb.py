@@ -214,6 +214,7 @@ class ATSSHead_obb(AnchorHead_obb):
              bbox_preds,
              centernesses,
              gt_bboxes,
+             gt_masks,
              gt_labels,
              img_metas,
              gt_bboxes_ignore=None):
@@ -239,6 +240,7 @@ class ATSSHead_obb(AnchorHead_obb):
         assert len(featmap_sizes) == self.anchor_generator.num_levels
 
         device = cls_scores[0].device
+        
         anchor_list, valid_flag_list = self.get_anchors(
             featmap_sizes, img_metas, device=device)
         label_channels = self.cls_out_channels if self.use_sigmoid_cls else 1
@@ -247,6 +249,7 @@ class ATSSHead_obb(AnchorHead_obb):
             anchor_list,
             valid_flag_list,
             gt_bboxes,
+            gt_masks,
             img_metas,
             gt_bboxes_ignore_list=gt_bboxes_ignore,
             gt_labels_list=gt_labels,
@@ -444,7 +447,7 @@ class ATSSHead_obb(AnchorHead_obb):
 
         batch_mlvl_bboxes = torch.cat(mlvl_bboxes, dim=1)
         if rescale:
-            batch_mlvl_bboxes /= batch_mlvl_bboxes.new_tensor(
+            batch_mlvl_bboxes[..., :4] /= batch_mlvl_bboxes[..., :4].new_tensor(
                 scale_factors).unsqueeze(1)
         batch_mlvl_scores = torch.cat(mlvl_scores, dim=1)
         batch_mlvl_centerness = torch.cat(mlvl_centerness, dim=1)
