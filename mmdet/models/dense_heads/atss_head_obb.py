@@ -9,6 +9,7 @@ from mmdet.core import (anchor_inside_flags, build_assigner, build_sampler,
                         reduce_mean, unmap)
 from ..builder import HEADS, build_loss
 from .anchor_head_obb import AnchorHead_obb
+from mmdet.core.bbox.transforms import gt_mask_bp_obbs
 
 
 @HEADS.register_module()
@@ -557,6 +558,7 @@ class ATSSHead_obb(AnchorHead_obb):
                            valid_flags,
                            num_level_anchors,
                            gt_bboxes,
+                           gt_masks,
                            gt_bboxes_ignore,
                            gt_labels,
                            img_meta,
@@ -596,6 +598,11 @@ class ATSSHead_obb(AnchorHead_obb):
                 neg_inds (Tensor): Indices of negative anchor with shape
                     (num_neg,).
         """
+        gt_obbs = gt_mask_bp_obbs(gt_masks)
+        # print('gt_obbs')
+        # print('gt_obbs',gt_obbs)
+        gt_obbs_ts = torch.from_numpy(gt_obbs).to(gt_bboxes.device)
+        # print('gt_obbs_ts',gt_obbs_ts)
         inside_flags = anchor_inside_flags(flat_anchors, valid_flags,
                                            img_meta['img_shape'][:2],
                                            self.train_cfg.allowed_border)
@@ -607,7 +614,7 @@ class ATSSHead_obb(AnchorHead_obb):
         num_level_anchors_inside = self.get_num_level_anchors_inside(
             num_level_anchors, inside_flags)
         assign_result = self.assigner.assign(anchors, num_level_anchors_inside,
-                                             gt_bboxes, gt_bboxes_ignore,
+                                             gt_obbs_ts[...,:4], gt_bboxes_ignore,
                                              gt_labels)
 
         sampling_result = self.sampler.sample(assign_result, anchors,
