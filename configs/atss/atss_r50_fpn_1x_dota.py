@@ -65,7 +65,7 @@ train_pipeline = [
     dict(
         type='Resize',
         img_scale=(800, 800), keep_ratio=True),
-    dict(type='RandomFlip', direction = ['horizontal', 'vertical'],, flip_ratio=0.5),
+    dict(type='RandomFlip', direction = ['horizontal', 'vertical'], flip_ratio=0.5),
     dict(
         type='Normalize',
         mean=[103.53, 116.28, 123.675],
@@ -141,7 +141,7 @@ log_config = dict(interval=50, hooks=[dict(type='TextLoggerHook')])
 custom_hooks = [dict(type='NumClassCheckHook')]
 dist_params = dict(backend='nccl')
 log_level = 'INFO'
-load_from = '/content/mmdetection/checkpoint/retinanet_r50_fpn_2x_coco_20200131-fdb43119.pth'
+load_from = 'https://download.openmmlab.com/mmdetection/v2.0/atss/atss_r50_fpn_1x_coco/atss_r50_fpn_1x_coco_20200209-985f7bd0.pth'
 resume_from = None
 workflow = [('train', 1)]
 work_dir = '/content/tutorial_exps'
