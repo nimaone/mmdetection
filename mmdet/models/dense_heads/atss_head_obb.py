@@ -497,6 +497,7 @@ class ATSSHead_obb(AnchorHead_obb):
                     anchor_list,
                     valid_flag_list,
                     gt_bboxes_list,
+                    gt_masks_list,
                     img_metas,
                     gt_bboxes_ignore_list=None,
                     gt_labels_list=None,
@@ -532,6 +533,7 @@ class ATSSHead_obb(AnchorHead_obb):
              valid_flag_list,
              num_level_anchors_list,
              gt_bboxes_list,
+             gt_masks_list,
              gt_bboxes_ignore_list,
              gt_labels_list,
              img_metas,
@@ -621,11 +623,13 @@ class ATSSHead_obb(AnchorHead_obb):
                                              gt_labels)
 
         sampling_result = self.sampler.sample(assign_result, anchors,
-                                              gt_bboxes)
+                                              gt_obbs_ts)
 
         num_valid_anchors = anchors.shape[0]
-        bbox_targets = torch.zeros_like(anchors)
-        bbox_weights = torch.zeros_like(anchors)
+        # bbox_targets = torch.zeros_like(anchors)
+        # bbox_weights = torch.zeros_like(anchors)
+        bbox_targets = anchors.new_zeros((anchors.size(0), 5))
+        bbox_weights = anchors.new_zeros((anchors.size(0), 5))
         labels = anchors.new_full((num_valid_anchors, ),
                                   self.num_classes,
                                   dtype=torch.long)
