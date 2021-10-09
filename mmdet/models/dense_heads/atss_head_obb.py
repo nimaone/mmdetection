@@ -157,7 +157,7 @@ class ATSSHead_obb(AnchorHead_obb):
             dict[str, Tensor]: A dictionary of loss components.
         """
 
-        anchors = anchors.reshape(-1, 5)
+        anchors = anchors.reshape(-1, 4)
         cls_score = cls_score.permute(0, 2, 3, 1).reshape(
             -1, self.cls_out_channels).contiguous()
         bbox_pred = bbox_pred.permute(0, 2, 3, 1).reshape(-1, 5)
