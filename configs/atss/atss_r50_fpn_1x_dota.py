@@ -39,7 +39,8 @@ model = dict(
             gamma=2.0,
             alpha=0.25,
             loss_weight=1.0),
-        loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
+        loss_bbox=dict(type='L1Loss', loss_weight=1.0),
+        # loss_bbox=dict(type='GIoULoss', loss_weight=2.0),
         loss_centerness=dict(
             type='CrossEntropyLoss', use_sigmoid=True, loss_weight=1.0)),
     # training and testing settings
@@ -56,7 +57,7 @@ model = dict(
         max_per_img=2000))
 # optimizer
 dataset_type = 'dotaDataset'
-data_root = '/content/DOTA_ssplit_600_150/'
+data_root = '/content/DOTA_split_600_150/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -97,8 +98,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=4,
-    workers_per_gpu=2,
+    samples_per_gpu=8,
+    workers_per_gpu=4,
     train=dict(
         type='dotaDataset',
         ann_file='train/DOTA_train.json',
@@ -124,7 +125,7 @@ evaluation = dict(interval=1, metric='mAP')
 
 
 # optimizer
-optimizer = dict(type='SGD', lr=0.001, momentum=0.9, weight_decay=0.0001)
+optimizer = dict(type='SGD', lr=0.005, momentum=0.9, weight_decay=0.0001)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
@@ -144,6 +145,6 @@ log_level = 'INFO'
 load_from = 'https://download.openmmlab.com/mmdetection/v2.0/atss/atss_r50_fpn_1x_coco/atss_r50_fpn_1x_coco_20200209-985f7bd0.pth'
 resume_from = None
 workflow = [('train', 1)]
-work_dir = '/content/tutorial_exps'
+work_dir = '/content/tutorial_exps2'
 seed = 0
 gpu_ids = range(0, 1)
