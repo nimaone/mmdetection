@@ -184,27 +184,45 @@ class ATSSHead_obb(AnchorHead_obb):
             pos_anchors = anchors[pos_inds]
             pos_centerness = centerness[pos_inds]
 
+
+            # print('pos_anchors.shape',pos_anchors.shape)
+            # print('pos_centerness.shape',pos_centerness.shape)
+
+            # print('pos_bbox_targets.shape',pos_bbox_targets.shape)
+            # print('pos_bbox_pred.shape',pos_bbox_pred.shape)
+
+            # print('pos_bbox_targets',pos_bbox_targets)
+            # print('pos_bbox_pred',pos_bbox_pred)
+
             centerness_targets = self.centerness_target(
                 pos_anchors, pos_bbox_targets)
             # print('centerness_targets',centerness_targets)
             # print('centerness_targets.shape',centerness_targets.shape)    
             # pos_decode_bbox_pred = self.bbox_coder.decode(
-                # pos_anchors, pos_bbox_pred)
+            #     pos_anchors, pos_bbox_pred)
             # pos_decode_bbox_targets = self.bbox_coder.decode(
-                # pos_anchors, pos_bbox_targets)
+            #     pos_anchors, pos_bbox_targets)
+            # print('pos_decode_bbox_pred',pos_decode_bbox_pred.shape)
+            # print('pos_decode_bbox_targets',pos_decode_bbox_targets.shape)
+            # print('pos_decode_bbox_pred',pos_decode_bbox_pred)
+            # print('pos_decode_bbox_targets.shape',pos_decode_bbox_targets)
 
             # regression loss
+            loss_centerness = self.loss_centerness(
+                pos_centerness,
+                centerness_targets,
+                avg_factor=num_total_samples)
+            # print('loss_centerness.shape',loss_centerness.shape)
+            # print('loss_centerness',loss_centerness)    
             loss_bbox = self.loss_bbox(
                 pos_bbox_pred,
                 pos_bbox_targets,
                 weight=centerness_targets.unsqueeze(1),
                 avg_factor=1.0)
-
+            # print('loss_bbox.shape',loss_bbox.shape)
+            # print('loss_bbox',loss_bbox)
             # centerness loss
-            loss_centerness = self.loss_centerness(
-                pos_centerness,
-                centerness_targets,
-                avg_factor=num_total_samples)
+            
 
         else:
             loss_bbox = bbox_pred.sum() * 0
@@ -442,8 +460,11 @@ class ATSSHead_obb(AnchorHead_obb):
                 scores = scores[batch_inds, topk_inds, :]
                 centerness = centerness[batch_inds, topk_inds]
             else:
-                anchors = anchors.expand_as(bbox_pred)
-
+                  # print('anchors.shape',anchors.shape)
+                  # print('bbox_pred.shape',bbox_pred.shape)
+                # anchors = anchors.expand_as(bbox_pred)
+                anchors = anchors.unsqueeze(0)
+                print('anchors.shape',anchors.shape)
             bboxes = self.bbox_coder.decode(
                 anchors, bbox_pred, max_shape=img_shapes)
             mlvl_bboxes.append(bboxes)
@@ -629,7 +650,11 @@ class ATSSHead_obb(AnchorHead_obb):
 
         sampling_result = self.sampler.sample(assign_result, anchors,
                                               gt_obbs_ts)
-
+        # print('sampling_result',(sampling_result))
+        # print('sampling_result.pos_inds',(sampling_result.pos_inds))
+        # print('sampling_result.neg_inds',(sampling_result.neg_inds))
+        # print('sampling_result.pos_bboxes',(sampling_result.pos_bboxes))
+        # print('sampling_result.pos_gt_bboxes',(sampling_result.pos_gt_bboxes))
         num_valid_anchors = anchors.shape[0]
         # bbox_targets = torch.zeros_like(anchors)
         # bbox_weights = torch.zeros_like(anchors)
