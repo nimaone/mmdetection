@@ -31,8 +31,8 @@ model = dict(
             strides=[8, 16, 32, 64, 128]),
         bbox_coder=dict(
             type='DeltaXYWHBBoxCoder',
-            target_means=[.0, .0, .0, .0, 0.],
-            target_stds=[0.1, 0.1, 0.2, 0.2, 0.1]),
+            target_means=[.0, .0, .0, .0, .0],
+            target_stds=[1.0, 1.0, 1.0, 1.0, 1.0]),
         loss_cls=dict(
             type='FocalLoss',
             use_sigmoid=True,
@@ -57,7 +57,7 @@ model = dict(
         max_per_img=2000))
 # optimizer
 dataset_type = 'dotaDataset'
-data_root = '/content/DOTA_split_600_150/'
+data_root = '/content/DOTA_ssplit_600_150/'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 train_pipeline = [
@@ -99,7 +99,7 @@ test_pipeline = [
 
 data = dict(
     samples_per_gpu=8,
-    workers_per_gpu=4,
+    workers_per_gpu=8,
     train=dict(
         type='dotaDataset',
         ann_file='train/DOTA_train.json',
