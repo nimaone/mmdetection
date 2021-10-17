@@ -464,7 +464,7 @@ class ATSSHead_obb(AnchorHead_obb):
                   # print('bbox_pred.shape',bbox_pred.shape)
                 # anchors = anchors.expand_as(bbox_pred)
                 anchors = anchors.unsqueeze(0)
-                print('anchors.shape',anchors.shape)
+#                 print('anchors.shape',anchors.shape)
             bboxes = self.bbox_coder.decode(
                 anchors, bbox_pred, max_shape=img_shapes)
             mlvl_bboxes.append(bboxes)
