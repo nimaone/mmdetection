@@ -14,6 +14,7 @@ import xml.etree.ElementTree as ET
 import os
 #import cPickle
 import numpy as np
+import cv2
 from mmdetection.polyiou import polyiou
 from functools import partial
 import glob
