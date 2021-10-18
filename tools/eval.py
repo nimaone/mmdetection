@@ -1,38 +1,3 @@
-# from help_utils import tools
-wordname_15 = ['plane', 'baseball-diamond', 'bridge', 'ground-track-field', 'small-vehicle', 'large-vehicle', 'ship', 'tennis-court',
-                'basketball-court', 'storage-tank',  'soccer-ball-field', 'roundabout', 'harbor', 'swimming-pool', 'helicopter']
-def write_voc_results_file(all_boxes, test_imgid_list, det_save_dir):
-  '''
-  :param all_boxes: is a list. each item reprensent the detections of a img.
-  the detections is a array. shape is [-1, 7]. [category, score, x, y, w, h, theta]
-  Note that: if none detections in this img. that the detetions is : []
-  :param test_imgid_list:
-  :param det_save_path:
-  :return:
-  '''
-  for cls_id,cls  in enumerate(wordname_15):
-    if cls == 'back_ground':
-      continue
-    print("Writing {} VOC resutls file".format(cls))
-
-    # tools.mkdir(det_save_dir)
-    det_save_path = os.path.join(det_save_dir, "Task1_"+cls+".txt")
-    with open(det_save_path, 'wt') as f:
-      for index, img_name in enumerate(test_imgid_list):
-        this_img_detections = all_boxes[index]
-
-        this_cls_detections = this_img_detections[this_img_detections[:, 0] == cls_id]
-        if this_cls_detections.shape[0] == 0:
-          continue # this cls has none detections in this img
-        for a_det in this_cls_detections:
-          f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
-                  format( os. path. splitext(os.path.basename(img_name))[0], a_det[1],
-                         a_det[2], a_det[3],
-                         a_det[4], a_det[5],
-                         a_det[6],a_det[7],
-                         a_det[8],a_det[9]))  # that is [img_name, score, x, y, w, h, theta]
-
-
 # --------------------------------------------------------
 # dota_evaluation_task1
 # Licensed under The MIT License [see LICENSE for details]
@@ -49,9 +14,9 @@ import xml.etree.ElementTree as ET
 import os
 #import cPickle
 import numpy as np
-import matplotlib.pyplot as plt
 from mmdetection.polyiou import polyiou
 from functools import partial
+import glob
 
 def parse_gt(filename):
     """
@@ -295,3 +260,182 @@ def voc_eval_dota(detpath,
     ap = voc_ap(rec, prec, use_07_metric)
 
     return rec, prec, ap
+# from help_utils import tools
+wordname_15 = ['plane', 'baseball-diamond', 'bridge', 'ground-track-field', 'small-vehicle', 'large-vehicle', 'ship', 'tennis-court',
+                'basketball-court', 'storage-tank',  'soccer-ball-field', 'roundabout', 'harbor', 'swimming-pool', 'helicopter']
+def write_voc_results_file(all_boxes, test_imgid_list, det_save_dir):
+  '''
+  :param all_boxes: is a list. each item reprensent the detections of a img.
+  the detections is a array. shape is [-1, 7]. [category, score, x, y, w, h, theta]
+  Note that: if none detections in this img. that the detetions is : []
+  :param test_imgid_list:
+  :param det_save_path:
+  :return:
+  '''
+  for cls_id,cls  in enumerate(wordname_15):
+    if cls == 'back_ground':
+      continue
+    print("Writing {} VOC resutls file".format(cls))
+
+    # tools.mkdir(det_save_dir)
+    det_save_path = os.path.join(det_save_dir, "Task1_"+cls+".txt")
+    with open(det_save_path, 'wt') as f:
+      for index, img_name in enumerate(test_imgid_list):
+        this_img_detections = all_boxes[index]
+
+        this_cls_detections = this_img_detections[this_img_detections[:, 0] == cls_id]
+        if this_cls_detections.shape[0] == 0:
+          continue # this cls has none detections in this img
+        for a_det in this_cls_detections:
+          f.write('{:s} {:.3f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f} {:.1f}\n'.
+                  format( os. path. splitext(os.path.basename(img_name))[0], a_det[1],
+                         a_det[2], a_det[3],
+                         a_det[4], a_det[5],
+                         a_det[6],a_det[7],
+                         a_det[8],a_det[9]))  # that is [img_name, score, x, y, w, h, theta]
+
+def poly_nms(dets,scores, iou_threshold):
+      # scores = dets[:, 8]
+      polys = []
+      areas = []
+      for i in range(len(dets)):
+          tm_polygon = polyiou.VectorDouble([dets[i][0], dets[i][1],
+                                              dets[i][2], dets[i][3],
+                                              dets[i][4], dets[i][5],
+                                              dets[i][6], dets[i][7]])
+          polys.append(tm_polygon)
+      order = scores.argsort()[::-1]
+
+      keep = []
+      while order.size > 0:
+          ovr = []
+          i = order[0]
+          keep.append(i)
+          for j in range(order.size - 1):
+              iou = polyiou.iou_poly(polys[i], polys[order[j + 1]])
+              ovr.append(iou)
+          ovr = np.array(ovr)
+          inds = np.where(ovr <= iou_threshold)[0]
+          order = order[inds + 1]
+      return keep
+
+def py_cpu_nms_poly_fast(dets,scores, thresh):
+    try:
+        obbs = dets[:, 0:-1]
+    except:
+        print('fail index')
+        pdb.set_trace()
+    x1 = np.min(obbs[:, 0::2], axis=1)
+    y1 = np.min(obbs[:, 1::2], axis=1)
+    x2 = np.max(obbs[:, 0::2], axis=1)
+    y2 = np.max(obbs[:, 1::2], axis=1)
+    # scores = dets[:, 8]
+    areas = (x2 - x1 + 1) * (y2 - y1 + 1)
+
+    polys = []
+    for i in range(len(dets)):
+        tm_polygon = polyiou.VectorDouble([dets[i][0], dets[i][1],
+                                            dets[i][2], dets[i][3],
+                                            dets[i][4], dets[i][5],
+                                            dets[i][6], dets[i][7]])
+        polys.append(tm_polygon)
+    order = scores.argsort()[::-1]
+
+    keep = []
+    while order.size > 0:
+        ovr = []
+        i = order[0]
+        keep.append(i)
+        # if order.size == 0:
+        #     break
+        xx1 = np.maximum(x1[i], x1[order[1:]])
+        yy1 = np.maximum(y1[i], y1[order[1:]])
+        xx2 = np.minimum(x2[i], x2[order[1:]])
+        yy2 = np.minimum(y2[i], y2[order[1:]])
+        # w = np.maximum(0.0, xx2 - xx1 + 1)
+        # h = np.maximum(0.0, yy2 - yy1 + 1)
+        w = np.maximum(0.0, xx2 - xx1)
+        h = np.maximum(0.0, yy2 - yy1)
+        hbb_inter = w * h
+        hbb_ovr = hbb_inter / (areas[i] + areas[order[1:]] - hbb_inter)
+        # h_keep_inds = np.where(hbb_ovr == 0)[0]
+        h_inds = np.where(hbb_ovr > 0)[0]
+        tmp_order = order[h_inds + 1]
+        for j in range(tmp_order.size):
+            iou = polyiou.iou_poly(polys[i], polys[tmp_order[j]])
+            hbb_ovr[h_inds[j]] = iou
+            # ovr.append(iou)
+            # ovr_index.append(tmp_order[j])
+
+        # ovr = np.array(ovr)
+        # ovr_index = np.array(ovr_index)
+        # print('ovr: ', ovr)
+        # print('thresh: ', thresh)
+        try:
+            if math.isnan(ovr[0]):
+                pdb.set_trace()
+        except:
+            pass
+        inds = np.where(hbb_ovr <= thresh)[0]
+
+        # order_obb = ovr_index[inds]
+        # print('inds: ', inds)
+        # order_hbb = order[h_keep_inds + 1]
+        order = order[inds + 1]
+        # pdb.set_trace()
+        # order = np.concatenate((order_obb, order_hbb), axis=0).astype(np.int)
+    return keep
+
+def poly_nms_np(quads,scores,lables):
+    quadrangles = np.reshape(quads,(-1,8))
+    idx = py_cpu_nms_poly_fast(quadrangles.astype(np.float64),scores,.1)
+    # print(idx)
+    quads = quads[idx]
+    scores = scores[idx]
+    lables = lables[idx]
+    return quads, scores, lables
+
+def rotate(ct,angle):
+      # rotation_amount_rad = angle * np.pi / 180.0
+      # c1=(ct[:,0].mean(),ct[:,1].mean())
+      # a=np.cos(rotation_amount_rad)
+      # b=np.sin(rotation_amount_rad)
+    #   M=np.array([[  a , b,  (1-a)*c1[0] -  b*c1[1]    ] ,
+    #               [  -b , a,   b*c1[0]    + (1-a)*c1[1] ]])
+      M = cv2.getRotationMatrix2D(tuple(ct.mean(axis=0)),angle, 1.0)
+      # print(M)
+      ones = np.ones(shape=(len(ct), 1))
+
+      points_ones = np.hstack([ct, ones])
+
+      # transform points
+      return  (M.dot(points_ones.T).T).astype(np.float32)
+
+def result_to_dets(result):
+    d = [ np.concatenate((r, np.repeat(i,len(r))[..., np.newaxis] ),axis=1)
+                            for i,r in enumerate( result ) if len(r)>0]
+    # print(len(d))                        
+    if len(d):                        
+      dets = np.concatenate(d)
+      angles = dets[...,0]
+      quads_off = dets[...,1:5]
+      scores = dets[...,5]
+      lables = dets[...,6]
+
+      quads = np.zeros((quads_off.shape[0] , 8))
+      quads[:, 0] = quads_off[:, 0] 
+      quads[:, 1] = quads_off[:, 1]
+      quads[:, 2] = quads_off[:, 2]
+      quads[:, 3] = quads_off[:, 1] 
+      quads[:, 4] = quads_off[:, 2] 
+      quads[:, 5] = quads_off[:, 3]
+      quads[:, 6] = quads_off[:, 0]
+      quads[:, 7] = quads_off[:, 3] 
+      quads = np.reshape(quads,(-1,4,2))
+      quads = np.array([rotate(q,-r)  for q,r in zip(quads,angles)])
+      return quads, scores, lables
+    else:
+      quads = np.zeros((1,8))
+      scores = np.zeros((1))
+      lables = np.zeros((1))
+      return quads, scores, lables
